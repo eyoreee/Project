@@ -47,6 +47,7 @@
       let rankArray = []; // 랭킹을 저장할 배열
       const oilCnt = [5, 4, 4, 3, 3]; // 자동차 기름이 줄어드는 속도
       let oilState; // 자동차 기름이 얼마나 남아있는지 판단
+      const music = new Audio(); // 음악 설정
 
       /* 서버 관리: cmd 해당 폴더로 진입, pm2 start(stop/restart) mysql/server.js */
 
@@ -343,6 +344,8 @@
 
         resetGame();
         setScreen("nextStage");
+        music.pause();
+        music.currentTime = 0;
       }
 
       // 게임이 끝났을 때 호출
@@ -353,6 +356,8 @@
 
         resetGame();
         setScreen("gameOver");
+        music.pause();
+        music.currentTime = 0;
       }
 
       // 일시정지, 게임오버, 다음스테이지 안내 화면을 띄움
@@ -489,6 +494,7 @@
           document.getElementById("score").innerText = "Score: " + score;
           document.getElementById("timer").innerText = "Time: " + count;
           setScreen("continue");
+          music.play();
         } else {
           // 게임 루프가 있으면
           clearInterval(loop); // 기존 루프 제거
@@ -496,6 +502,7 @@
           clearInterval(setPaxTimer); // 승객 생성 타이머 제거
           loop = null; // 기존 루프 변수 초기화
           setScreen("pause");
+          music.pause();
         }
       }
 
@@ -507,6 +514,8 @@
       addEventListener("load", function () {
         content = document.getElementById("content");
         header = document.getElementById("header");
+        music.src = "./testMusic.mp3"; // 음악 링크
+        //https://curryyou.tistory.com/337
 
         loadData();
 
