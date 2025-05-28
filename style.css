@@ -1,0 +1,74 @@
+@import url("https://fonts.googleapis.com/css2?family=Jersey+10&display=swap");
+
+body {
+  margin: 0px;
+}
+#wrapper {
+  width: 1000px;
+  height: 700px;
+  margin: auto;
+}
+#header {
+  height: 100px;
+  background-color: darkolivegreen;
+  position: relative;
+}
+#stage {
+  position: absolute;
+  top: -60px;
+  right: 400px;
+  color: #232323;
+  font-size: 70px;
+  font-family: "Jersey 10", sans-serif;
+}
+#timer {
+  position: absolute;
+  top: -5px;
+  right: 20px;
+  color: #232323;
+  font-size: 50px;
+  font-family: "Jersey 10", sans-serif;
+}
+#score {
+  position: absolute;
+  top: -47px;
+  right: 20px;
+  color: #232323;
+  font-size: 50px;
+  font-family: "Jersey 10", sans-serif;
+}
+#content {
+  height: 600px;
+  position: relative;
+  background-size: 1000px 600px;
+  background-image: url(../../images/project/map.png);
+  padding: 0px;
+}
+#gameInfo {
+  width: 50%;
+  height: 60%;
+  background: rgb(222, 222, 222);
+  opacity: 0.9;
+  position: relative;
+  left: 25%;
+  top: 15%;
+  border: 10px solid #13612d;
+  border-radius: 20px;
+  font-size: 35px;
+  font-family: "Jersey 10", sans-serif;
+  text-align: center;
+}
+#startBt {
+  left: 33%;
+  top: 40%;
+  position: absolute;
+  color: #232323;
+  background: none;
+  font-size: 80px;
+  font-family: "Jersey 10", sans-serif;
+  text-align: center;
+  border: none;
+}
+#startBt:hover {
+  color: #b70000;
+}

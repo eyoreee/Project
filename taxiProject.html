@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script src="./js/Object.js"></script>
+    <script src="./js/Taxi.js"></script>
+    <script src="./js/Block.js"></script>
+    <script src="./js/GasStation.js"></script>
+    <script src="./js/Passenger.js"></script>
+    <script src="./js/Heart.js"></script>
+    <script src="./js/Pin.js"></script>
+    <script src="./js/Sensor.js"></script>
+    <script src="./js/LeftSensor.js"></script>
+    <script src="./js/UpSensor.js"></script>
+    <script src="./js/RightSensor.js"></script>
+    <script src="./js/DownSensor.js"></script>
+    <script src="./js/PaxList.js"></script>
+    <script src="../lib/common.js"></script>
+    <script>
+      let mapTxt; // 로드된 맵 텍스트를 담을 변수
+      let mapArray; // 맵 텍스트를 2차원 배열로 변환해 담을 변수
+      let taxi, pax, block, pin, content;
+      let blockArray = Array.from({ length: 60 }, () => Array(100).fill(0)); // 블럭이 들어있는 배열
+      let loop = null; // 게임 전체적인 루프를 담당하는 타이머
+      let timer = null; // 게임 스테이지의 타이머
+      let count = 60; // 한 스테이지 당 타이머 설정
+      let heartArray = []; // HP div를 담을 배열
+      let paxArray = []; // 탑승객의 목록을 담을 배열
+      let randLoc, randDes, randPax; // 승객을 랜덤으로 배치하기 위한 변수
+      let hasPax = false; // 사용자가 승객을 태웠는지를 판단
+      let paxNum = -1; // 어떤 승객을 태웠는지 저장할 변수
+      let score = 0; // 점수를 저장할 변수
+
+      // git에서 Map 파일 로드하기 (10px씩 60*100 배열)
+      function loadData() {
+        const mapUrl =
+          "https://raw.githubusercontent.com/eyoreee/Project/refs/heads/main/Map.txt?nocache=" +
+          Date.now(); // map.txt파일이 저장된 git 서버 주소
+
+        fetch(mapUrl)
+          .then((response) => {
+            return response.text(); // 응답 내용을 텍스트 형태로 변환하여 반환
+          })
+          .then((data) => {
+            mapTxt = data; // 반환된 값 변수에 저장
+          })
+          .then(() => {
+            mapArray = mapTxt
+              .trim()
+              .split("\n")
+              .map((row) =>
+                row
+                  .trim()
+                  .split(",")
+                  .map((block) => block.split("").map(Number))
+                  .flat()
+              );
+            /* 텍스트를 2차원 배열로 변환하여 변수에 저장
+                - \n으로 행을 생성, ""로 문자 하나당 열을 생성
+               map: 배열을 순회하면서 각 행을 새 배열로 저장 (열 생성)
+               Number: 문자열을 숫자 자료형으로 변환                                              */
+          });
+      }
+
+      // 주유 기능 추가?
+      function checkGas() {}
+
+      function checkPax() {
+        if (hasPax === false) {
+          // 승객을 보유하고 있지 않으면
+          for (
+            let i = 0;
+            i < paxArray.length;
+            i++ // 화면에 띄워진 승객 중
+          )
+            if (collisionCheck(taxi.div, paxArray[i].div)) {
+              // 충돌에 해당되는지 확인
+              content.removeChild(paxArray[i].div); // 화면에서 제거
+              // 목적지 표시
+              pin = new Pin(
+                document.getElementById("content"),
+                paxLoc[randDes].x,
+                paxLoc[randDes].y + 20,
+                50,
+                50,
+                "url(../../images/project/pin.png)"
+              );
+              hasPax = true; // 승객을 보유하고 있음
+              paxNum = i; // i번째 승객 변수에 담아두기
+            }
+        } else if (collisionCheck(taxi.div, pin.div)) {
+          content.removeChild(pin.div); // 화면에서 제거
+          paxArray.splice(paxNum, 1); // 배열에서 제거
+          hasPax = false; // 승객을 보유하지 않음
+          paxNum = -1; // 변수에서 몇 번째 승객인지 제거
+          score += 10; // 점수 증가
+          document.getElementById("score").innerText = score; // 점수 출력
+          setPassenger(); // 새로운 승객 배치
+        }
+      }
+
+      // 맵 위에 승객들을 배치할 함수
+      function setPassenger() {
+        // 승객이 태어날 위치와 목적지가 같지 않을 때까지 반복
+        while (true) {
+          randLoc = Math.floor(Math.random() * paxLoc.length); // 승객의 위치
+          randDes = Math.floor(Math.random() * paxLoc.length); // 목적지의 위치
+          if (randLoc !== randDes) break; // 승객의 위치와 목적지의 위치가 같지 않으면 탈출
+        }
+        randPax = Math.floor(Math.random() * 7) + 1; // 랜덤번째 승객 선택
+
+        // 생성한 승객을 배열에 넣어두기
+        paxArray.push(
+          new Passenger(
+            content,
+            paxLoc[randLoc].x,
+            paxLoc[randLoc].y,
+            50,
+            75,
+            `url(../../images/project/pax${randPax}.png)`
+          )
+        );
+      }
+
+      // 맵 위의 객체들을 생성하는 함수
+      function createObject() {
+        // 2차원 배열 내 블럭, 택시 생성
+        for (let i = 0; i < mapArray.length; i++)
+          for (let j = 0; j < mapArray[i].length; j++)
+            switch (mapArray[i][j]) {
+              case 1: // 충돌 블럭 생성 (x, y, width, height, border, bg)
+                block = new Block(content, j * 10, i * 10, 10, 10, "yellow");
+                blockArray[i][j] = block;
+                break;
+              case 2: // 택시 생성 (x, y, width, height, velX, velY, img, border)
+                taxi = new Taxi(
+                  content,
+                  j * 10,
+                  i * 10,
+                  40,
+                  50,
+                  0,
+                  0,
+                  "url(../../images/project/taxi.png)"
+                );
+                break;
+            }
+
+        // HP 생성
+        for (let i = 0; i < 3; i++)
+          heartArray.push(
+            new Heart(
+              document.getElementById("header"),
+              20 + i * 65,
+              25,
+              55,
+              55,
+              "url(../../images/project/heart.png)"
+            )
+          );
+
+        // 주유소 생성
+        gas = new GasStation(content, 568, 500, 22, 80, "yellow");
+      }
+
+      // 게임 스테이지의 타이머를 제어하는 함수
+      function setStageTimer() {
+        // 1초마다 화면에 배치할 카운트 감소 및 출력
+        timer = setInterval(() => {
+          document.getElementById("timer").innerText = --count;
+          if (count <= 0) {
+            // 카운트가 0이 될 때
+            play();
+          }
+        }, 1000);
+      }
+
+      // 게임 start/pause를 담당할 함수
+      function play() {
+        if (loop == null) {
+          // 게임 루프가 없으면
+          loop = setInterval(gameLoop, 10); // 새로운 루프 생성
+          setStageTimer(); // 스테이지 타이머 설정
+        } else {
+          // 게임 루프가 있으면
+          clearInterval(loop); // 기존 루프 제거
+          clearInterval(timer); // 스테이지 타이머 제거
+          loop = null; // 기존 루프 변수 초기화
+        }
+      }
+
+      function gameLoop() {
+        taxi.tick();
+        taxi.render();
+      }
+
+      addEventListener("load", function () {
+        content = document.getElementById("content");
+
+        loadData();
+
+        addEventListener("click", (e) => {
+          console.log(e.clientX - 25, e.clientY - 100);
+        });
+
+        document.getElementById("startBt").addEventListener("click", () => {
+          content.removeChild(document.getElementById("gameInfo"));
+          content.removeChild(document.getElementById("startBt"));
+          // 화면 위 택시, 승객 등 생성
+          createObject();
+          setPassenger();
+          play();
+        });
+
+        // 키보드 눌렀을 때
+        addEventListener("keydown", function (e) {
+          switch (e.keyCode) {
+            case 37: // 좌
+              taxi.velX = -5;
+              taxi.rotate("X", loop);
+              break;
+            case 38: // 상
+              taxi.velY = -5;
+              taxi.rotate("Y", loop);
+              break;
+            case 39: // 우
+              taxi.velX = 5;
+              taxi.rotate("X", loop);
+              break;
+            case 40: // 하
+              taxi.velY = 5;
+              taxi.rotate("Y", loop);
+              break;
+            case 32: // 스페이스바
+              checkPax();
+              break;
+            case 27: // ESC
+              play();
+              break;
+          }
+        });
+
+        // 키보드 떼었을 때
+        addEventListener("keyup", function (e) {
+          switch (e.keyCode) {
+            case 37: // 좌
+              taxi.velX = 0;
+              break;
+            case 38: // 상
+              taxi.velY = 0;
+              break;
+            case 39: // 우
+              taxi.velX = 0;
+              break;
+            case 40: // 하
+              taxi.velY = 0;
+              break;
+          }
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <div id="wrapper">
+      <div id="header">
+        <p id="timer">60</p>
+        <p id="score">0</p>
+      </div>
+      <div id="content">
+        <div id="gameInfo">
+          <h1>T A X I D R I V E R</h1>
+          <br /><br />
+          * How to Move *<br />
+          ⬅ ⬆ ➡ ⬇ Space Bar
+        </div>
+        <button id="startBt">>> START <<</button>
+      </div>
+    </div>
+  </body>
+</html>
