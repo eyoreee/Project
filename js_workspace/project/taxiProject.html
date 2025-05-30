@@ -409,7 +409,7 @@
             70
           );
           // 모든 스테이지가 끝났을 때 스크린 띄움    // 조건은 줬는데, 내용 수정을 안 함. mysql연동해서 순위 띄우기
-        } else if (state == "gameOver") {
+        } else if (state == "gameClear") {
           loadData();
           divTxt = `* ALL CLEAR! *\nScore: ${score}`;
           screen = new Screen(
@@ -428,7 +428,7 @@
             70
           );
           // 게임 오버일 때 스크린 띄움
-        } else if (state == "gameClear") {
+        } else if (state == "gameOver") {
           divTxt = `Game Over\nScore: ${score}`;
           screen = new Screen(
             content,
